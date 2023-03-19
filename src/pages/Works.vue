@@ -476,7 +476,7 @@ export default {
           <q-spinner-dots color="primary" size="40px" />
         </div>
 
-        <!-- 分页 -->
+        <!-- 尝试分页 -->
         <div class="q-py-lg flex flex-center">
           <q-pagination
             v-model="page"
