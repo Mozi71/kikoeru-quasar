@@ -1,83 +1,103 @@
 <template>
   <div>
     <RecentList />
-    
-    <div class="text-h5 text-weight-regular q-ma-md flex">
-      {{ pageTitle }}
+
+    <div class="text-h5 text-weight-regular q-ma-md">
+      {{pageTitle}}
       <span v-show="pagination.totalCount">
-        ({{ pagination.totalCount }})
+        ({{pagination.totalCount}})
       </span>
-      <q-space />
     </div>
 
-    <div :class="`row justify-center ${displayMode === 'list' ? 'list' : 'q-mx-md'}`">
-      <!--      <q-infinite-scroll @load="onLoad" :offset="250" :disable="stopLoad" style="max-width: 1680px;" class="col"> -->
-      <q-page class="col">
-        <!-- 不论是否有作品，都显示排序和浏览模式选项 -->
-        <div class="row justify-between q-mb-md q-mr-sm">
+    <div :class="`row justify-center ${listMode ? 'list' : 'q-mx-md'}`">
+      <q-infinite-scroll @load="onLoad" :offset="250" :disable="stopLoad" style="max-width: 1680px;" class="col">
+        <div v-show="works.length" class="row justify-between q-mb-md q-mr-sm">
           <!-- 排序选择框 -->
           <q-select
-            v-model="sortOption" dense rounded outlined :bg-color="color" transition-show="scale"
-            transition-hide="scale" :options="options" :option-label="option => $t(option.label)" :label="$t('works.sort')"
+            dense
+            rounded
+            outlined
+            bg-color="white"
+            transition-show="scale"
+            transition-hide="scale"
+            v-model="sortOption"
+            :options="options"
+            label="排序"
             class="col-auto"
-          />
-
-          <q-checkbox
-            v-if="$i18n.locale === 'zh-CN'" v-model="subtitleOnly" :label="$t('common.translated')"
-            class="row"
           />
 
           <!-- 切换显示模式按钮 -->
           <q-btn-toggle
-            v-model="displayMode" dense spread rounded toggle-color="primary" color="white"
-            text-color="primary" :options="[
-              { icon: 'view_module', value: 'thumbnail' },
-              { icon: 'view_column', value: 'detail' },
-              { icon: 'list', value: 'list' },
-            ]" style="width: 85px;" class="col-auto"
+            dense
+            spread
+            rounded
+            v-model="listMode"
+            toggle-color="primary"
+            color="white"
+            text-color="primary"
+            :options="[
+              { icon: 'apps', value: false },
+              { icon: 'list', value: true }
+            ]"
+            style="width: 85px;"
+            class="col-auto"
           />
+
+          <q-btn-toggle
+            dense
+            spread
+            rounded
+            v-model="showLabel"
+            toggle-color="primary"
+            color="white"
+            text-color="primary"
+            :options="[
+              { icon: 'label', value: true },
+              { icon: 'label_off', value: false }
+            ]"
+            style="width: 85px;"
+            class="col-auto"
+            v-if="$q.screen.width > 700 && listMode"
+          />
+
+          <q-btn-toggle
+            dense
+            spread
+            rounded
+            :disable="$q.screen.width < 1120"
+            v-model="detailMode"
+            toggle-color="primary"
+            color="white"
+            text-color="primary"
+            :options="[
+              { icon: 'zoom_in', value: true },
+              { icon: 'zoom_out', value: false },
+            ]"
+            style="width: 85px;"
+            class="col-auto"
+            v-if="$q.screen.width > 700 && !listMode"
+          />
+
         </div>
 
-        <!-- 无缩略图的列表 -->
-        <q-list v-if="displayMode === 'list'" bordered separator :class="!$q.dark.isActive ? 'shadow-2' : ''">
-          <WorkListItem v-for="work in works" :id="work.id" :key="work.id" :metadata="work" :show-label="true" />
+        <q-list v-if="listMode" bordered separator class="shadow-2">
+          <WorkListItem v-for="work in works" :key="work.id" :metadata="work" :showLabel="showLabel && $q.screen.width > 700" />
         </q-list>
 
-        <!-- 缩略图或完整卡片 -->
         <div v-else class="row q-col-gutter-x-md q-col-gutter-y-lg">
-          <div
-            v-for="work in works"
-            :id="work.id" :key="work.id"
-            class="col-xs-12 col-sm-6 col-md-4" :class="displayMode === 'detail' ? 'col-lg-3 col-xl-2' : 'col-lg-2 col-xl-2'"
-          >
-            <WorkCard :metadata="work" :thumbnail-mode="displayMode === 'thumbnail'" class="fit" />
+          <div class="col-xs-12 col-sm-6 col-md-4" :class="detailMode ? 'col-lg-3 col-xl-3': 'col-lg-2 col-xl-2'" v-for="work in works" :key="work.id">
+            <WorkCard :metadata="work" :thumbnailMode="!detailMode" class="fit"/>
           </div>
         </div>
 
-        <!-- 无更多作品时 stopLoad = true -->
-        <div v-show="stopLoad && maxPage === 0" class="q-mt-lg q-mb-xl text-h6 text-bold text-center">
-          END
-        </div>
+        <div v-show="stopLoad" class="q-mt-lg q-mb-xl text-h6 text-bold text-center">END</div>
 
-        <!-- loading -->
-        <div v-show="loading" class="row justify-center q-my-md">
-          <q-spinner-dots color="primary" size="40px" />
-        </div>
-
-        <!-- 分页 -->
-        <div class="q-py-lg flex flex-center">
-          <q-pagination
-            v-model="page"
-            :max="Math.ceil(pagination.totalCount / pagination.pageSize) || 10"
-            :min="1"
-            input
-          />
-        </div>
-
-        <div v-show="userName === 'guest'" class="flex flex-center">
-          {{ $t('works.guestLoginRateLimitTips') }}
-        </div>
-      </q-page>
+        <template v-slot:loading>
+          <div class="row justify-center q-my-md">
+            <q-spinner-dots color="primary" size="40px" />
+          </div>
+        </template>
+      </q-infinite-scroll>
     </div>
   </div>
 </template>
