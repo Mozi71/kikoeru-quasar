@@ -1,12 +1,13 @@
 <template>
   <div>
+    <RecentList />
+    
     <div class="text-h5 text-weight-regular q-ma-md flex">
       {{ pageTitle }}
       <span v-show="pagination.totalCount">
         ({{ pagination.totalCount }})
       </span>
       <q-space />
-      <Language class="col-auto" />
     </div>
 
     <div :class="`row justify-center ${displayMode === 'list' ? 'list' : 'q-mx-md'}`">
